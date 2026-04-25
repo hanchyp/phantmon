@@ -33,6 +33,14 @@ The repository is divided into two main parts:
 
 ---
 
+## 📜 Deployed Contracts (Monad Testnet)
+
+- **MockUSDC**: [`0xBdA6fFc578B9E45e496A6ddd8a5Ee7DeDC72B9a1`](https://testnet.monadexplorer.com/address/0xBdA6fFc578B9E45e496A6ddd8a5Ee7DeDC72B9a1)
+- **pUSD**: [`0xDd6C878DFD16bbE20b929a1c352381B2C7C09421`](https://testnet.monadexplorer.com/address/0xDd6C878DFD16bbE20b929a1c352381B2C7C09421)
+- **YieldVault**: [`0x3AeCc6713bB2D948e469adbFA70Aaf8E9971ef23`](https://testnet.monadexplorer.com/address/0x3AeCc6713bB2D948e469adbFA70Aaf8E9971ef23)
+
+---
+
 ## 💻 Smart Contracts (`/sc`)
 
 This project uses [Foundry](https://getfoundry.sh/) for compiling, testing, and deployment.
