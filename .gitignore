@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# IDE and AI Agents
+.agents/
+.claude/
+.vscode/
+.github/
+
+# Media / Generated
+screenshots/
+
+# Smart Contracts (sc)
+sc/cache/
+sc/out/
+sc/broadcast/*/31337/
+sc/broadcast/*/1337/
+sc/broadcast/**/dry-run/
+sc/docs/
+sc/.env
+sc/.env.*
