@@ -14,10 +14,10 @@ function fmt(n: number) {
 export default function MintPage() {
   const { authenticated, login } = usePrivy();
   const { address } = useAccount();
-  const { pUsdBalance, usdcBalance, refetchAll } = useVault();
+  const { pUsdBalance, usdcBalance, usdcAllowance, refetchAll } = useVault();
   
   const {
-    approveAndDeposit,
+    approve,
     deposit,
     withdraw,
     mintMockUSDC,
@@ -58,9 +58,12 @@ export default function MintPage() {
   const handleMint = async () => {
     if (!mintAmount) return;
     const amountWei = parseUnits(mintAmount, 18);
-    // 1. Approve MockUSDC for Vault
-    // 2. The hook handles the flow, wait for user tx
-    approveAndDeposit(amountWei);
+    
+    if (usdcAllowance < amountWei) {
+      approve(amountWei);
+    } else {
+      deposit(amountWei);
+    }
   };
 
   const handleRedeem = async () => {
@@ -233,19 +236,21 @@ export default function MintPage() {
                   {!authenticated ? (
                      <button className="btn btn-primary w-full" onClick={login}>Connect Wallet</button>
                   ) : (
-                    <button
-                      className="btn btn-primary w-full"
-                      onClick={handleMint}
-                      disabled={!mintAmount || parseFloat(mintAmount) <= 0 || parseFloat(mintAmount) > parsedUsdcBalance || isPending}
-                    >
-                      {isPending ? (
-                        <><span className="spinner" /> {isApproving ? 'Approving...' : isConfirming ? 'Confirming...' : 'Minting...'}</>
-                      ) : parseFloat(mintAmount) > parsedUsdcBalance ? (
-                        'Insufficient Balance'
-                      ) : (
-                        'Approve & Mint pUSD'
-                      )}
-                    </button>
+                      <button
+                        className="btn btn-primary w-full"
+                        onClick={handleMint}
+                        disabled={!mintAmount || parseFloat(mintAmount) <= 0 || parseFloat(mintAmount) > parsedUsdcBalance || isPending}
+                      >
+                        {isPending ? (
+                          <><span className="spinner" /> {isApproving ? 'Approving...' : isConfirming ? 'Confirming...' : 'Minting...'}</>
+                        ) : parseFloat(mintAmount) > parsedUsdcBalance ? (
+                          'Insufficient Balance'
+                        ) : usdcAllowance < (mintAmount ? parseUnits(mintAmount, 18) : 0n) ? (
+                          'Approve USDC'
+                        ) : (
+                          'Mint pUSD'
+                        )}
+                      </button>
                   )}
 
                   {mintSuccess && (

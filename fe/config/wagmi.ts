@@ -1,5 +1,5 @@
 import { createConfig } from '@privy-io/wagmi';
-import { monadTestnet } from 'wagmi/chains';
+import { monadTestnet } from 'viem/chains';
 import { http } from 'wagmi';
 
 export const wagmiConfig = createConfig({

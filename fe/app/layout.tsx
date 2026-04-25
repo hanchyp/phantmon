@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
+import { Chatbot } from '@/components/chatbot'
 import Providers from '@/components/providers'
 import './globals.css'
-import './phantmon.css'
+import './phantmo.css'
 
 export const metadata: Metadata = {
-  title: 'Phantmon — Phantom Monad Yield Vault',
+  title: 'Phantmo — Phantom Monad Yield Vault',
   description: 'Deposit USDC, receive pUSD, and earn real yield on Monad. A dual-token DeFi protocol with simulated compounding.',
 }
 
@@ -35,6 +36,7 @@ export default function RootLayout({
             {children}
           </div>
           <Footer />
+          <Chatbot />
         </Providers>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

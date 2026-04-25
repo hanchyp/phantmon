@@ -39,7 +39,7 @@ export function useVault() {
       {
         address: ADDRESSES.yieldVault,
         abi: yieldVaultAbi,
-        functionName: 'userYieldDebt',
+        functionName: 'getClaimableYield',
         args: [address as `0x${string}`],
       },
       {
@@ -54,6 +54,12 @@ export function useVault() {
         functionName: 'balanceOf',
         args: [address as `0x${string}`],
       },
+      {
+        address: ADDRESSES.mockUsdc,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [address as `0x${string}`, ADDRESSES.yieldVault],
+      },
     ],
     query: {
       enabled: isConnected && !!address,
@@ -61,30 +67,22 @@ export function useVault() {
   });
 
   const userDeposits = (userData?.[0]?.result as bigint) || 0n;
-  const userYieldDebt = (userData?.[1]?.result as bigint) || 0n;
+  const claimableYield = (userData?.[1]?.result as bigint) || 0n;
   const pUsdBalance = (userData?.[2]?.result as bigint) || 0n;
   const usdcBalance = (userData?.[3]?.result as bigint) || 0n;
-
-  // Calculate claimable yield
-  // formula: (userDeposits * accYieldPerShare / 1e18) - userYieldDebt
-  const accumulated = (userDeposits * accYieldPerShare) / 10n ** 18n;
-  const claimableYield = accumulated > userYieldDebt ? accumulated - userYieldDebt : 0n;
+  const usdcAllowance = (userData?.[4]?.result as bigint) || 0n;
 
   const refetchAll = () => {
     refetchTotalDeposits();
-    refetchTotalYield();
-    refetchAccYieldPerShare();
     refetchUserData();
   };
 
   return {
     totalDeposits,
-    totalYield,
-    accYieldPerShare,
     userDeposits,
-    userYieldDebt,
     pUsdBalance,
     usdcBalance,
+    usdcAllowance,
     claimableYield,
     refetchAll,
   };

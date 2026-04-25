@@ -41,6 +41,11 @@ contract Deploy is Script {
         console2.log("Deposited", depositAmount / 1e18, "MockUSDC into YieldVault");
         console2.log("Received", pusdToken.balanceOf(msg.sender) / 1e18, "pUSD tokens");
 
+        // 8. Fund the vault so it can pay out time-based yield later
+        uint256 yieldFund = 1000000 * 1e18; // 1,000,000 USDC
+        usdc.mint(address(vault), yieldFund);
+        console2.log("Funded YieldVault with", yieldFund / 1e18, "MockUSDC to pay out future yield");
+
         vm.stopBroadcast();
     }
 }

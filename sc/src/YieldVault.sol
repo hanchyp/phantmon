@@ -7,8 +7,8 @@ import {pUSD} from "./pUSD.sol";
 
 /**
  * @title YieldVault
- * @notice The yield engine for the Phantmon dual-token protocol.
- * Users deposit USDC and receive 1:1 pUSD. Yield is tracked separately and can be claimed.
+ * @notice The yield engine for the Phantmo dual-token protocol.
+ * Users deposit USDC and receive 1:1 pUSD. Yield is tracked separately and accumulates over time.
  */
 contract YieldVault {
     using SafeERC20 for IERC20;
@@ -16,19 +16,17 @@ contract YieldVault {
     IERC20 public immutable underlyingAsset;
     pUSD public immutable stableToken;
 
-    uint256 public totalDeposits;
-    uint256 public totalYield;
+    uint256 public constant APY_BPS = 1250; // 12.5%
+    uint256 public constant SECONDS_PER_YEAR = 31557600; // 365.25 days
 
-    // We use a standard accumulator for robust reward accounting
-    // This prevents late depositors from stealing yield meant for early depositors
-    uint256 public accYieldPerShare;
+    uint256 public totalDeposits;
 
     mapping(address => uint256) public userDeposits;
-    mapping(address => uint256) public userYieldDebt;
+    mapping(address => uint256) public userPendingYield;
+    mapping(address => uint256) public userLastUpdateTime;
 
     event Deposit(address indexed user, uint256 amount);
     event Withdraw(address indexed user, uint256 amount);
-    event YieldSimulated(uint256 amount);
     event YieldClaimed(address indexed user, uint256 amount);
 
     constructor(IERC20 _underlyingAsset, pUSD _stableToken) {
@@ -39,15 +37,37 @@ contract YieldVault {
     }
 
     /**
+     * @notice Internal function to calculate and store yield earned since the last update.
+     */
+    function _updateYield(address user) internal {
+        if (userDeposits[user] > 0) {
+            uint256 timeElapsed = block.timestamp - userLastUpdateTime[user];
+            uint256 earned = (userDeposits[user] * APY_BPS * timeElapsed) / (10000 * SECONDS_PER_YEAR);
+            userPendingYield[user] += earned;
+        }
+        userLastUpdateTime[user] = block.timestamp;
+    }
+
+    /**
+     * @notice Gets the total claimable yield for a user, including pending and newly earned.
+     */
+    function getClaimableYield(address user) public view returns (uint256) {
+        if (userDeposits[user] == 0) return userPendingYield[user];
+        uint256 timeElapsed = block.timestamp - userLastUpdateTime[user];
+        uint256 earned = (userDeposits[user] * APY_BPS * timeElapsed) / (10000 * SECONDS_PER_YEAR);
+        return userPendingYield[user] + earned;
+    }
+
+    /**
      * @notice Deposits USDC to receive 1:1 pUSD.
      * @param amount The amount of USDC to deposit.
      */
     function deposit(uint256 amount) external {
         require(amount > 0, "Amount must be > 0");
 
-        // 1. Accounting: Update debt for the new deposit amount to prevent claiming past yield
-        userYieldDebt[msg.sender] += (amount * accYieldPerShare) / 1e18;
-        
+        // 1. Update yield BEFORE changing balances
+        _updateYield(msg.sender);
+
         totalDeposits += amount;
         userDeposits[msg.sender] += amount;
 
@@ -66,8 +86,8 @@ contract YieldVault {
         require(amount > 0, "Amount must be > 0");
         require(userDeposits[msg.sender] >= amount, "Insufficient deposit");
 
-        // 1. Accounting: Decrease debt proportionally so un-claimed yield remains intact
-        userYieldDebt[msg.sender] -= (amount * accYieldPerShare) / 1e18;
+        // 1. Update yield BEFORE changing balances
+        _updateYield(msg.sender);
 
         totalDeposits -= amount;
         userDeposits[msg.sender] -= amount;
@@ -80,42 +100,19 @@ contract YieldVault {
     }
 
     /**
-     * @notice Simulates yield being accumulated by the vault.
-     * @param amount The amount of yield to simulate.
-     * @dev Does not transfer tokens. For users to successfully claim, the vault must actually possess the USDC.
-     */
-    function simulateYield(uint256 amount) external {
-        require(amount > 0, "Yield must be > 0");
-        require(totalDeposits > 0, "No deposits to earn yield");
-
-        totalYield += amount;
-        accYieldPerShare += (amount * 1e18) / totalDeposits;
-
-        emit YieldSimulated(amount);
-    }
-
-    /**
-     * @notice For the dual-token MVP, yield naturally accumulates in totalYield.
-     * This function is a placeholder per specifications.
-     */
-    function compound() external {
-        // In this dual-token model, yield is tracked separately via accYieldPerShare
-        // and doesn't get compounded into the deposit principal (which would alter the 1:1 pUSD ratio).
-    }
-
-    /**
-     * @notice Claims accrued yield for the user.
+     * @notice Claims accrued time-based yield for the user.
      */
     function claimYield() external {
-        uint256 accumulated = (userDeposits[msg.sender] * accYieldPerShare) / 1e18;
-        uint256 claimable = accumulated - userYieldDebt[msg.sender];
-
+        _updateYield(msg.sender);
+        
+        uint256 claimable = userPendingYield[msg.sender];
         require(claimable > 0, "No yield to claim");
 
         // Effects
-        userYieldDebt[msg.sender] = accumulated;
+        userPendingYield[msg.sender] = 0;
 
         // Interactions
+        // The vault must have enough MockUSDC to pay out this yield.
         underlyingAsset.safeTransfer(msg.sender, claimable);
 
         emit YieldClaimed(msg.sender, claimable);

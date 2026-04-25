@@ -6,7 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title pUSD
- * @notice The user-facing 1:1 stablecoin for the Phantmon protocol.
+ * @notice The user-facing 1:1 stablecoin for the Phantmo protocol.
  * Only the YieldVault (which will be set as the owner) can mint or burn.
  */
 contract pUSD is ERC20, Ownable {

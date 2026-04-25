@@ -1,16 +1,32 @@
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { ADDRESSES, erc20Abi, yieldVaultAbi } from '@/config/contracts';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+
+type PendingAction =
+  | { type: 'approve'; amount: bigint }
+  | { type: 'deposit'; amount: bigint }
+  | { type: 'withdraw'; amount: bigint }
+  | { type: 'claim' }
+  | { type: 'mint-usdc'; to: `0x${string}`; amount: bigint }
+  | null;
 
 export function useVaultActions(onSuccess?: () => void) {
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [isApproving, setIsApproving] = useState(false);
+  const pendingActionRef = useRef<PendingAction>(null);
+
+  // Store onSuccess in a ref so it never causes useEffect re-fires
+  const onSuccessRef = useRef(onSuccess);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
 
   const {
     writeContract,
     isPending: isWritePending,
     error: writeError,
     data: hash,
+    reset: resetWrite,
   } = useWriteContract();
 
   const {
@@ -21,20 +37,25 @@ export function useVaultActions(onSuccess?: () => void) {
     hash: txHash,
   });
 
+  // Track tx hash
   useEffect(() => {
     if (hash) {
       setTxHash(hash);
     }
   }, [hash]);
 
+  // When tx confirms, handle follow-up actions
   useEffect(() => {
-    if (isConfirmed && onSuccess) {
-      onSuccess();
-      setIsApproving(false);
-    }
-  }, [isConfirmed, onSuccess]);
+    if (!isConfirmed || !txHash) return;
 
-  const approveAndDeposit = async (amountWei: bigint) => {
+    // Call onSuccess regardless of the action type (e.g. approve or deposit both refetch)
+    onSuccessRef.current?.();
+    setIsApproving(false);
+    pendingActionRef.current = null;
+  }, [isConfirmed, txHash]);
+
+  const approve = (amountWei: bigint) => {
+    pendingActionRef.current = { type: 'approve', amount: amountWei };
     setIsApproving(true);
     writeContract({
       address: ADDRESSES.mockUsdc,
@@ -44,7 +65,8 @@ export function useVaultActions(onSuccess?: () => void) {
     });
   };
 
-  const deposit = async (amountWei: bigint) => {
+  const deposit = (amountWei: bigint) => {
+    pendingActionRef.current = { type: 'deposit', amount: amountWei };
     writeContract({
       address: ADDRESSES.yieldVault,
       abi: yieldVaultAbi,
@@ -53,7 +75,8 @@ export function useVaultActions(onSuccess?: () => void) {
     });
   };
 
-  const withdraw = async (amountWei: bigint) => {
+  const withdraw = (amountWei: bigint) => {
+    pendingActionRef.current = { type: 'withdraw', amount: amountWei };
     writeContract({
       address: ADDRESSES.yieldVault,
       abi: yieldVaultAbi,
@@ -62,7 +85,8 @@ export function useVaultActions(onSuccess?: () => void) {
     });
   };
 
-  const claimYield = async () => {
+  const claimYield = () => {
+    pendingActionRef.current = { type: 'claim' };
     writeContract({
       address: ADDRESSES.yieldVault,
       abi: yieldVaultAbi,
@@ -70,7 +94,8 @@ export function useVaultActions(onSuccess?: () => void) {
     });
   };
 
-  const mintMockUSDC = async (to: `0x${string}`, amountWei: bigint) => {
+  const mintMockUSDC = (to: `0x${string}`, amountWei: bigint) => {
+    pendingActionRef.current = { type: 'mint-usdc', to, amount: amountWei };
     writeContract({
       address: ADDRESSES.mockUsdc,
       abi: erc20Abi,
@@ -79,8 +104,15 @@ export function useVaultActions(onSuccess?: () => void) {
     });
   };
 
+  const resetState = useCallback(() => {
+    setTxHash(undefined);
+    setIsApproving(false);
+    pendingActionRef.current = null;
+    resetWrite();
+  }, [resetWrite]);
+
   return {
-    approveAndDeposit,
+    approve,
     deposit,
     withdraw,
     claimYield,
@@ -91,9 +123,6 @@ export function useVaultActions(onSuccess?: () => void) {
     isApproving,
     error: writeError || confirmError,
     txHash,
-    resetState: () => {
-      setTxHash(undefined);
-      setIsApproving(false);
-    }
+    resetState,
   };
 }

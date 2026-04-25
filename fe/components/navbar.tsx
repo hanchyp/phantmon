@@ -28,7 +28,7 @@ export function Navbar() {
     <nav className="navbar">
       <Link href="/" className="nav-logo">
         <div className="nav-logo-icon">👻</div>
-        <span className="nav-logo-text">Phantmon</span>
+        <span className="nav-logo-text">Phantmo</span>
       </Link>
 
       <div className={`nav-links${mobileOpen ? ' open' : ''}`}>

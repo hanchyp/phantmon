@@ -14,14 +14,21 @@ function fmtLong(n: number) {
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 }).format(n);
 }
 
+// ── Mock constants ──────────────────────────────────────────
+// A fixed past timestamp so mock yield is never 0 on load.
+// "Deposit" supposedly started 7 days ago.
+const MOCK_DEPOSIT = 25_000;        // 25,000 pUSD
+const MOCK_APY = 12.5;
+const MOCK_START = Date.now() - 7 * 24 * 3600 * 1000; // 7 days ago
+const MOCK_YIELD_PER_SEC = (MOCK_DEPOSIT * MOCK_APY) / (365.25 * 24 * 3600 * 100);
+
 export default function EarnPage() {
   const { authenticated, login } = usePrivy();
   const { userDeposits, claimableYield: onChainClaimableYield, refetchAll } = useVault();
   
   const [claimSuccess, setClaimSuccess] = useState(false);
-  const { claimYield, isPending, isConfirming, error, resetState } = useVaultActions(() => {
+  const { claimYield, isPending, isConfirming, error } = useVaultActions(() => {
     setClaimSuccess(true);
-    resetState();
     refetchAll();
     setTimeout(() => setClaimSuccess(false), 4000);
   });
@@ -29,45 +36,61 @@ export default function EarnPage() {
   const parsedDeposits = parseFloat(formatUnits(userDeposits, 18));
   const parsedClaimable = parseFloat(formatUnits(onChainClaimableYield, 18));
   
-  const apy = 12.5; // Fixed for now
+  // Decide whether we have real on-chain data
+  const hasRealData = parsedDeposits > 0;
 
-  // Calculate yield per second based on APY and deposit
-  // yieldPerSecond = (deposit * apy) / (365.25 * 24 * 3600 * 100)
-  const yieldPerSecond = (parsedDeposits * apy) / (365.25 * 24 * 3600 * 100);
+  const apy = MOCK_APY;
 
-  const [accumulatedYield, setAccumulatedYield] = useState(parsedClaimable);
+  // Use real values when available, otherwise mock
+  const displayDeposit = hasRealData ? parsedDeposits : MOCK_DEPOSIT;
+  const yieldPerSecond = (displayDeposit * apy) / (365.25 * 24 * 3600 * 100);
+
+  // Base claimable: real on-chain value, or the time-based mock amount
+  const baseClaimable = hasRealData
+    ? parsedClaimable
+    : MOCK_YIELD_PER_SEC * ((Date.now() - MOCK_START) / 1000);
+
+  const [accumulatedYield, setAccumulatedYield] = useState(baseClaimable);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
 
-  // Sync with on-chain data
+  // Sync base when on-chain data or mock baseline changes
   useEffect(() => {
-    setAccumulatedYield(parsedClaimable);
+    const newBase = hasRealData
+      ? parsedClaimable
+      : MOCK_YIELD_PER_SEC * ((Date.now() - MOCK_START) / 1000);
+    setAccumulatedYield(newBase);
     startRef.current = Date.now();
     setElapsed(0);
-  }, [parsedClaimable]);
+  }, [parsedClaimable, hasRealData]);
 
   // Live ticker — updates every 100ms
   useEffect(() => {
-    if (!authenticated || parsedDeposits <= 0) return;
-    
     const interval = setInterval(() => {
       const now = Date.now();
-      const dt = (now - startRef.current) / 1000; // seconds elapsed
+      const dt = (now - startRef.current) / 1000;
       setElapsed(dt);
-      setAccumulatedYield(parsedClaimable + (yieldPerSecond * dt));
+
+      if (hasRealData) {
+        setAccumulatedYield(parsedClaimable + (yieldPerSecond * dt));
+      } else {
+        // Mock: total seconds since mock start
+        const totalSec = (now - MOCK_START) / 1000;
+        setAccumulatedYield(MOCK_YIELD_PER_SEC * totalSec);
+      }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [parsedClaimable, yieldPerSecond, authenticated, parsedDeposits]);
+  }, [parsedClaimable, yieldPerSecond, hasRealData]);
 
   const handleClaim = () => {
     claimYield();
   };
 
   // Projected earnings
-  const daily = parsedDeposits * apy / 100 / 365.25;
+  const daily = displayDeposit * apy / 100 / 365.25;
   const monthly = daily * 30;
-  const yearly = parsedDeposits * apy / 100;
+  const yearly = displayDeposit * apy / 100;
 
   return (
     <>
@@ -89,6 +112,12 @@ export default function EarnPage() {
             <span style={{ color: 'var(--success)' }}>+${yieldPerSecond.toFixed(10)}</span> per second
           </div>
 
+          {!hasRealData && (
+            <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-muted)', opacity: 0.7 }}>
+              Demo mode — connect wallet for live data
+            </div>
+          )}
+
           <div className="divider" />
           
           {error && (
@@ -106,7 +135,7 @@ export default function EarnPage() {
               <button
                 className="btn btn-green btn-lg"
                 onClick={handleClaim}
-                disabled={accumulatedYield <= 0 || isPending}
+                disabled={accumulatedYield <= 0 || isPending || !hasRealData}
               >
                 {isPending ? (
                   <><span className="spinner" style={{ borderColor: 'rgba(0,0,0,0.2)', borderTopColor: '#000' }} /> {isConfirming ? 'Confirming...' : 'Claiming...'}</>
@@ -157,7 +186,7 @@ export default function EarnPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="flex-between">
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>pUSD Deposited</span>
-                <span style={{ fontWeight: 600 }}>{fmt(parsedDeposits)} pUSD</span>
+                <span style={{ fontWeight: 600 }}>{fmt(displayDeposit)} pUSD</span>
               </div>
               <div className="flex-between">
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>APY</span>
@@ -183,3 +212,4 @@ export default function EarnPage() {
     </>
   );
 }
+

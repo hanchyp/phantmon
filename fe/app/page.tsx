@@ -67,9 +67,9 @@ export default function HomePage() {
       <section>
         <div className="section-header-center">
           <div className="section-tag">Dual-Token Architecture</div>
-          <h2 className="section-title">How Phantmon Works</h2>
+          <h2 className="section-title">How Phantmo Works</h2>
           <p className="section-desc">
-            Phantmon separates your stable balance from your yield earnings.
+            Phantmo separates your stable balance from your yield earnings.
             Simple, transparent, and always 1:1 redeemable.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function HomePage() {
             <div className="feature-icon feature-icon-purple">💵</div>
             <div className="feature-title">Deposit USDC</div>
             <div className="feature-desc">
-              Send USDC to the Phantmon vault. Your funds join a shared liquidity pool
+              Send USDC to the Phantmo vault. Your funds join a shared liquidity pool
               that is put to work generating yield across DeFi strategies.
             </div>
           </div>
@@ -104,15 +104,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============ WHY PHANTMON ============ */}
+      {/* ============ WHY PHANTMO ============ */}
       <section style={{ paddingTop: 40 }}>
         <div className="grid-2" style={{ alignItems: 'center', gap: 60 }}>
           <div>
-            <div className="section-tag">Why Phantmon?</div>
+            <div className="section-tag">Why Phantmo?</div>
             <h2 className="section-title">Built Different</h2>
             <p className="section-desc" style={{ marginBottom: 28 }}>
               Most yield vaults change your token balance or price, making it confusing.
-              Phantmon keeps your money at exactly $1 and tracks yield separately.
+              Phantmo keeps your money at exactly $1 and tracks yield separately.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[

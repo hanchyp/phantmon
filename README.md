@@ -1,16 +1,16 @@
-# 👻 Phantmon (Phantom Monad)
+# 👻 Phantmo (Phantom Monad)
 
 **A dual-token yield-bearing DeFi protocol optimized for the Monad ecosystem.**
 
-Phantmon introduces a highly efficient way for users to park their stablecoins and earn passive yield, separating the stable unit of account from the yield generation engine.
+Phantmo introduces a highly efficient way for users to park their stablecoins and earn passive yield, separating the stable unit of account from the yield generation engine.
 
 ---
 
 ## 🌟 Overview
 
-In the Phantmon dual-token architecture, your deposit balance and your generated yield are strictly separated to provide a robust and predictable DeFi experience:
+In the Phantmo dual-token architecture, your deposit balance and your generated yield are strictly separated to provide a robust and predictable DeFi experience:
 
-1. **Deposit:** Users deposit an underlying asset (e.g., `USDC`) into the Phantmon YieldVault.
+1. **Deposit:** Users deposit an underlying asset (e.g., `USDC`) into the Phantmo YieldVault.
 2. **Stablecoin (`pUSD`):** In return, users receive **`pUSD` (Phantom USD)** strictly on a 1:1 ratio. `pUSD` is a standard ERC20 stablecoin that does not fluctuate in price.
 3. **Yield Engine:** The vault's pooled assets are utilized off-chain or across other DeFi protocols to generate yield.
 4. **Separate Yield Tracking:** As yield is generated, it accumulates inside the vault's accounting system. This yield does **not** alter the `pUSD` price or supply.

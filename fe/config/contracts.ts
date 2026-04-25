@@ -1,7 +1,7 @@
 export const ADDRESSES = {
-  mockUsdc: '0x5cB42763f7ec6e8aA819470CD1d7c8a143296B11' as `0x${string}`,
-  pUsd: '0x4c571d7a4f5E61Bb59b5dE3df26e41B1cEF46925' as `0x${string}`,
-  yieldVault: '0x2FD02A153508Ff445C079D7abB81D00Ea027986e' as `0x${string}`,
+  mockUsdc: '0xBdA6fFc578B9E45e496A6ddd8a5Ee7DeDC72B9a1' as `0x${string}`,
+  pUsd: '0xDd6C878DFD16bbE20b929a1c352381B2C7C09421' as `0x${string}`,
+  yieldVault: '0x3AeCc6713bB2D948e469adbFA70Aaf8E9971ef23' as `0x${string}`,
 };
 
 export const erc20Abi = [
@@ -43,6 +43,16 @@ export const erc20Abi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'transfer',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
 ] as const;
 
 export const yieldVaultAbi = [
@@ -69,6 +79,13 @@ export const yieldVaultAbi = [
   },
   {
     type: 'function',
+    name: 'getClaimableYield',
+    inputs: [{ name: 'user', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'userDeposits',
     inputs: [{ name: 'account', type: 'address' }],
     outputs: [{ type: 'uint256' }],
@@ -76,7 +93,14 @@ export const yieldVaultAbi = [
   },
   {
     type: 'function',
-    name: 'userYieldDebt',
+    name: 'userPendingYield',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'userLastUpdateTime',
     inputs: [{ name: 'account', type: 'address' }],
     outputs: [{ type: 'uint256' }],
     stateMutability: 'view',
@@ -84,20 +108,6 @@ export const yieldVaultAbi = [
   {
     type: 'function',
     name: 'totalDeposits',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'totalYield',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'accYieldPerShare',
     inputs: [],
     outputs: [{ type: 'uint256' }],
     stateMutability: 'view',

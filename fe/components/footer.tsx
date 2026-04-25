@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-copy">
-          Phantmon © 2026 · Built on Monad · Demo with simulated yield
+          Phantmo © 2026 · Built on Monad · Demo with simulated yield
         </div>
         <div className="footer-links">
           <Link href="/" className="footer-link">Home</Link>
